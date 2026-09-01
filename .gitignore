@@ -1,0 +1,18 @@
+# 依赖与构建产物（各子项目内部也有各自 .gitignore）
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 日志
+logs/
+*.log
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 环境变量（如 .env.local）
+.env.*.local
