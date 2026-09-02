@@ -1,0 +1,486 @@
+openapi: 3.0.3
+info:
+  title: StudyFlow Community API
+  version: 1.0.0
+  description: 成泽楷负责的社区发布、搜索和互动接口契约。
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+paths:
+  /api/posts:
+    post:
+      summary: 发布动态
+      tags: [Community]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: 首次发布成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEnvelope'
+        '200':
+          description: 重复发布同一打卡，返回已有动态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEnvelope'
+    get:
+      summary: 公开发现列表
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/Keyword'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 公开动态分页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostPageEnvelope'
+  /api/posts/search:
+    get:
+      summary: 搜索公开动态
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/RequiredKeyword'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 搜索结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostPageEnvelope'
+  /api/posts/mine:
+    get:
+      summary: 我的非删除动态
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 当前用户动态分页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostPageEnvelope'
+  /api/posts/{id}:
+    get:
+      summary: 动态详情
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 动态详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: 编辑自己的动态
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostRequest'
+      responses:
+        '200':
+          description: 编辑成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEnvelope'
+    delete:
+      summary: 软删除自己的动态
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyEnvelope'
+  /api/posts/{id}/likes:
+    post:
+      summary: 点赞
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 当前点赞状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeEnvelope'
+    delete:
+      summary: 取消点赞
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 当前点赞状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeEnvelope'
+  /api/posts/{id}/comments:
+    post:
+      summary: 发表评论
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: 评论成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEnvelope'
+    get:
+      summary: 评论列表
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 可见评论列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListEnvelope'
+  /api/comments/{id}:
+    delete:
+      summary: 删除自己的评论
+      tags: [Community]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyEnvelope'
+  /api/users/{id}/follow:
+    post:
+      summary: 关注用户
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: 当前关注状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowEnvelope'
+    delete:
+      summary: 取消关注用户
+      tags: [Community]
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: 当前关注状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowEnvelope'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PostId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    Keyword:
+      name: keyword
+      in: query
+      required: false
+      schema:
+        type: string
+    RequiredKeyword:
+      name: keyword
+      in: query
+      required: true
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+  responses:
+    NotFound:
+      description: 资源不存在或不可见
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmptyEnvelope'
+  schemas:
+    ApiEnvelope:
+      type: object
+      required: [code, message, data, requestId]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        data: {}
+        requestId:
+          type: string
+    CreatePostRequest:
+      type: object
+      required: [checkInId, content, visibility]
+      properties:
+        checkInId:
+          type: integer
+          format: int64
+        content:
+          type: string
+          maxLength: 500
+        visibility:
+          $ref: '#/components/schemas/PostVisibility'
+    UpdatePostRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 500
+        visibility:
+          $ref: '#/components/schemas/PostVisibility'
+    CreateCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          maxLength: 500
+    CommunityUser:
+      type: object
+      required: [id, nickname, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nickname:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [NORMAL, RESTRICTED, DISABLED]
+    PostVisibility:
+      type: string
+      enum: [PUBLIC, PRIVATE]
+    PostStatus:
+      type: string
+      enum: [PENDING, VISIBLE, HIDDEN, DELETED]
+    CommentStatus:
+      type: string
+      enum: [VISIBLE, HIDDEN, DELETED]
+    Post:
+      type: object
+      required:
+        - id
+        - author
+        - content
+        - visibility
+        - status
+        - likeCount
+        - commentCount
+        - likedByCurrentUser
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: '#/components/schemas/CommunityUser'
+        checkInId:
+          type: integer
+          format: int64
+          nullable: true
+        content:
+          type: string
+        visibility:
+          $ref: '#/components/schemas/PostVisibility'
+        status:
+          $ref: '#/components/schemas/PostStatus'
+        likeCount:
+          type: integer
+          format: int64
+        commentCount:
+          type: integer
+          format: int64
+        likedByCurrentUser:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Comment:
+      type: object
+      required: [id, author, content, status, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: '#/components/schemas/CommunityUser'
+        content:
+          type: string
+        status:
+          $ref: '#/components/schemas/CommentStatus'
+        createdAt:
+          type: string
+          format: date-time
+    LikeState:
+      type: object
+      required: [postId, liked, likeCount]
+      properties:
+        postId:
+          type: integer
+          format: int64
+        liked:
+          type: boolean
+        likeCount:
+          type: integer
+          format: int64
+    FollowState:
+      type: object
+      required: [userId, following]
+      properties:
+        userId:
+          type: integer
+          format: int64
+        following:
+          type: boolean
+    PagePost:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+          format: int64
+    PostEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Post'
+    PostPageEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PagePost'
+    CommentEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Comment'
+    CommentListEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+    LikeEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/LikeState'
+    FollowEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FollowState'
+    EmptyEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              nullable: true
